@@ -1,0 +1,5 @@
+apiVersion: v2
+name: monitoring
+version: 0.1.0
+kubeVersion: 1.33.5
+description: Monitoring chart

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-prometheus
+  namespace: monitoring
+spec:
+  selector:
+    app: {{ .Release.Name }}-prometheus
+  ports:
+  - port: {{ .Values.prometheus.servicePort }}
+    targetPort: {{ .Values.prometheus.containerPort }}

@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector: 
+    matchLabels: 
+      app: {{ .Release.Name }}-prometheus
+  template:
+    metadata:
+      name: {{ .Release.Name }}-prometheus
+      namespace: monitoring
+      labels: 
+        app: {{ .Release.Name }}-prometheus
+    spec:
+      serviceAccountName: {{ .Release.Name }}-prometheus-sa
+      containers:
+      - name: prometheus
+        image: {{ .Values.images.prometheus }}
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - name: prometheus-conf
+          mountPath: /etc/prometheus/prometheus.yml
+          readOnly: true 
+          subPath: prometheus.yml
+      volumes:
+      - name: prometheus-conf
+        configMap:
+          name: {{ .Release.Name }}-prometheus

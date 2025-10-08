@@ -1,0 +1,13 @@
+
+node_exporter:
+  containerPort: 9100
+  servicePort: 9100
+
+prometheus:
+  containerPort: 9090
+  servicePort: 9090
+  ingress_host: prometheus.local
+
+images:
+  node_exporter: prom/node-exporter
+  prometheus: prom/prometheus
