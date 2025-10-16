@@ -1,0 +1,57 @@
+# GRAFANA
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-grafana
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels: 
+      app: {{ .Release.Name }}-grafana
+  template:
+    metadata: 
+      name: {{ .Release.Name }}-grafana
+      namespace: monitoring
+      labels:
+        app: {{ .Release.Name }}-grafana
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-grafana
+        image: {{ .Values.images.grafana }} 
+        ports:
+        - containerPort: {{ .Values.grafana.containerPort }}
+          protocol: TCP
+---
+# SERVICE
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-grafana
+  namespace: monitoring
+spec:
+  selector:
+    app: {{ .Release.Name }}-grafana
+  ports:
+  - targetPort: {{ .Values.grafana.containerPort }}
+    port: {{ .Values.grafana.servicePort }}
+--- 
+# INGRESS
+{{- if .Values.grafana.ingress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-grafana
+  namespace: monitoring
+spec:
+  rules:
+  - host: {{ .Values.grafana.ingress_host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-grafana
+            port:
+              number: {{ .Values.grafana.servicePort }}
+{{- end }}

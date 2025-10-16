@@ -1,0 +1,103 @@
+# SERVICE ACCOUNT 
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-prometheus-sa
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-prometheus-sa-role
+  namespace: monitoring
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-prometheus-sa-rb
+  namespace: monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-prometheus-sa-role
+subjects:
+- apiGroup: ""
+  kind: ServiceAccount
+  name: {{ .Release.Name }}-prometheus-sa
+  namespace: monitoring 
+---
+# STATEFUL SET
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-prometheus
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-prometheus
+  template:
+    metadata:
+      name: {{ .Release.Name }}-prometheus
+      namespace: monitoring
+      labels:
+        app: {{ .Release.Name }}-prometheus
+    spec:
+      serviceAccountName: {{ .Release.Name }}-prometheus-sa
+      containers:
+      - name: prometheus
+        image: {{ .Values.images.prometheus }}
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - name: prometheus-conf
+          mountPath: /etc/prometheus/prometheus.yml
+          readOnly: true
+          subPath: prometheus.yml
+      volumes:
+      - name: prometheus-conf
+        configMap:
+          name: {{ .Release.Name }}-prometheus
+      - name: rules
+        configMap: 
+          name: {{ .Release.Name }}-node-exporter-rule
+--- 
+# SERVICE ACCOUNT 
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-prometheus
+  namespace: monitoring
+spec:
+  selector:
+    app: {{ .Release.Name }}-prometheus
+  ports:
+  - port: {{ .Values.prometheus.servicePort }}
+    targetPort: {{ .Values.prometheus.containerPort }}
+---
+# INGRESS
+{{- if .Values.prometheus.ingress }} 
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name}}-prometheus
+  namespace: monitoring
+spec:
+  rules:
+  - host: {{ .Values.prometheus.ingress_host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Release.Name }}-prometheus
+            port:
+              number: {{ .Values.prometheus.servicePort }}
+{{- end }}
