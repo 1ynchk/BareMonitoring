@@ -60,6 +60,10 @@ spec:
           mountPath: /etc/prometheus/prometheus.yml
           readOnly: true
           subPath: prometheus.yml
+        - name: rules
+          mountPath: /etc/prometheus/rules/rule_node_exporter.yaml
+          readOnly: true
+          subPath: rule_node_exporter.yaml
       volumes:
       - name: prometheus-conf
         configMap:
